@@ -1,0 +1,21 @@
+# MSVC files
+ipch
+*.sdf
+*.suo
+*.vcxproj.filters
+*.vcxproj.user
+*.opensdf
+
+# temporary backups
+*~
+
+#binaries
+*.o
+
+# 
+local.config
+bin/*
+!bin/.keepdir
+build/*
+!build/.keepdir
+
