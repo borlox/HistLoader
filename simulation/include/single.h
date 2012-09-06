@@ -15,7 +15,7 @@ class single {
 		void reset();
 		friend std::ostream  &operator<<(std::ostream &o, const single& s);
 		single &operator=(const float &f);
-		float operator=(const single &s);
+		float getFloat();
 		single &operator+(const single &s);
 		single &operator-(const single &s);
 		single &operator*(const single &s);

@@ -28,6 +28,7 @@ std::ostream  &operator<<(std::ostream &o, const single& s)
 	for (int i = 22; i >= 0; i--) {
 		o << s.mantis[i];
 	}
+	return o;
 }
 
 void single::reset()
@@ -43,13 +44,56 @@ void single::reset()
 
 single &single::operator=(const float &f)
 {
-	single s();
-	s.sign = f > 0 ? false : true;
-	
-}
-		
+	sign = f > 0 ? false : true;
+	uint32_t intc = (uint32_t) f;
+	for (int i = 0; i < 23; i++) {
+		exponent[i] = (intc & ( 1 << i )) >> i;
+	}
 
-float single::operator=(const single &s)
+	for (int i = 23; i < 31; i++) {
+		mantis[i] = (intc & ( 1 << i )) >> i;
+	}
+
+	return *this;
+}
+	
+
+float single::getFloat()
+{
+	uint32_t intc = 0;
+	for (int i = 0; i < 23; i++) {
+		intc |= exponent[i] << i;
+	}
+
+	for (int i = 23; i < 31; i++) {
+		intc |= mantis[i] << i;
+	}
+	intc |= sign << 31;
+	return (float) intc;
+}
+
+single& single::operator+(const single &s)
+{
+	sign = 0;
+	
+	for (int i = 0; i < 8; i++) {
+		
+	}
+	bool carry  = 0;
+	for (int i = 0; i < 23; i++) {
+		mantis[i] ^= (s.mantis[i] ^ carry);
+		carry = mantis[i] && s.mantis[i];
+	}
+	return *this;
+}
+
+single& single::operator-(const single &s)
 {
 
 }
+
+single& single::operator*(const single &s)
+{
+
+}
+
