@@ -43,7 +43,9 @@ void single::reset()
 
 single &single::operator=(const float &f)
 {
-
+	single s();
+	s.sign = f > 0 ? false : true;
+	
 }
 		
 
