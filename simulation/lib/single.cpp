@@ -47,11 +47,11 @@ single &single::operator=(const float &f)
 	sign = f > 0 ? false : true;
 	uint32_t intc = (uint32_t) f;
 	for (int i = 0; i < 23; i++) {
-		exponent[i] = (intc & ( 1 << i )) >> i;
+		mantis[i] = (intc & ( 1 << i )) >> i;
 	}
 
 	for (int i = 23; i < 31; i++) {
-		mantis[i] = (intc & ( 1 << i )) >> i;
+		exponent[i] = (intc & ( 1 << i )) >> i;
 	}
 
 	return *this;
@@ -62,11 +62,11 @@ float single::getFloat()
 {
 	uint32_t intc = 0;
 	for (int i = 0; i < 23; i++) {
-		intc |= exponent[i] << i;
+		intc |= mantis[i] << i;
 	}
 
 	for (int i = 23; i < 31; i++) {
-		intc |= mantis[i] << i;
+		intc |= exponent[i] << i;
 	}
 	intc |= sign << 31;
 	return (float) intc;
@@ -81,8 +81,13 @@ single& single::operator+(const single &s)
 	}
 	bool carry  = 0;
 	for (int i = 0; i < 23; i++) {
-		mantis[i] ^= (s.mantis[i] ^ carry);
-		carry = mantis[i] && s.mantis[i];
+		bool x = mantis[i];
+		bool y = s.mantis[i];
+		bool cin = carry;
+		bool cout;
+		mantis[i] = x ^ y ^ cin ;
+		cout = (x & y) | (cin & x) | (cin & y);
+		carry = cout ;
 	}
 	return *this;
 }

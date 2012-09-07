@@ -11,7 +11,7 @@ AR = ar
 ARFLAGS = rcs
 
 CPP = g++
-CPPFLAGS +=  -Iinclude -O3 -std=c++0x   
+CPPFLAGS +=  -Iinclude -O3 -std=c++0x #-Wall -Wextra -pedantic
 CPPFLAGS_DEBUG += -g -O0 -s
 CPPFLAGS_RELEASE +=  -DNDEBUG
 
