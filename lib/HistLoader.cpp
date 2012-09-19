@@ -30,6 +30,11 @@ void HistLoader::LoadFile(std::string fileName)
 	}
 }
 
+void HistLoader::CreateHistograms()
+{
+	
+}
+
 void HistLoader::ParseLine(std::string line)
 {
 	std::string trimmed = boost::trim_copy(line);
@@ -87,7 +92,7 @@ bool HistLoader::CheckRange(std::string& line)
 }
 
 template <char X>
-bool ischar(char c)
+static bool ischar(char c)
 {
 	return c == X;
 }
@@ -206,4 +211,39 @@ void HistLoader::DebugDumpDef(HistDef* def)
 	for (HistDef::ValueMap::iterator it = def->attributes.begin(); it != def->attributes.end(); ++it) {
 		std::cout << "   " << it->first << ": " << it->second << "\n";
 	}
+}
+
+std::string HistLoader::HistDef::ResolveAllVariables(std::string val, int idx)
+{
+	size_t pos = val.find("$");
+	while (pos != val.npos) {
+		std::string varName = "$";
+		size_t p = pos+1;
+		while (p < val.size() && std::isalpha(val[p])) {
+			varName += val[p];
+			++p;
+		}
+
+		std::string res = ResolveVariable(varName, idx);
+		boost::replace_first(val, varName, res);
+
+		pos = val.find("$");
+	}
+
+	return val;
+}
+
+std::string HistLoader::HistDef::ResolveVariable(const std::string& varName, int idx)
+{
+	if (!Has(varName))
+		return varName.substr(1);
+
+	if (currentlyResolving.count(varName))
+		throw std::runtime_error("circular dependency for variable '" + varName + "' in " + name);
+	currentlyResolving.insert(varName);
+
+	std::string res = Get(varName, idx, varName.substr(1), true);
+
+	currentlyResolving.erase(varName);
+	return res;
 }

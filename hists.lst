@@ -8,7 +8,7 @@ template mass
 	min:	0
 	max:	500
 	$what:	
-	xtitle:	M_{$what } [GeV]
+	xtitle:	M_{$what} [GeV]
 	ytitle: events
 
 template cosAngle: angle

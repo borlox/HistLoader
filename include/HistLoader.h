@@ -53,13 +53,16 @@ public:
 			return attributes.find(attr) != attributes.end();
 		}
 
-		std::string Get(const std::string& attr, int idx = -1, std::string def = "")
+		std::string Get(const std::string& attr, int idx = -1, std::string def = "", bool noVar = false)
 		{
 			if (!Has(attr))
 				return def;
+
 			std::string var;
 			boost::apply_visitor(ValueForIndex(var, idx), attributes[attr]);
-			return var;
+			if (noVar)
+				return var;
+			return ResolveAllVariables(var, idx);
 		}
 
 		struct OutputValue : public boost::static_visitor<>
@@ -109,8 +112,14 @@ public:
 
 		private:
 			std::string& var;
-			int idx;
+			int idx;			
 		};
+
+	private:
+		std::set<std::string> currentlyResolving;
+
+		std::string ResolveAllVariables(std::string val, int idx = -1);
+		std::string ResolveVariable(const std::string& varName, int idx);		
 	};	
 
 	void LoadFile(std::string fileName);
@@ -121,6 +130,13 @@ public:
 	T* GetHistogram(std::string name);
 
 	HistMap& GetAllHistograms();
+
+	HistDef& GetDef(const std::string& name)
+	{
+		if (defMap.find(name) == defMap.end())
+			throw std::out_of_range(name);
+		return defMap[name];
+	}
 
 	TH1& operator[](const std::string& hist)
 	{

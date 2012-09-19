@@ -12,4 +12,6 @@ int main(int argc, char *argv[])
 	//std::cout << StartsWithFollowedBy("template\t", "template", " \t");
 
 	histLoader.LoadFile("hists.lst");
+
+	std::cout << "xtitle: " << histLoader.GetDef("massTTbar").Get("xtitle") << "\n";
 }
