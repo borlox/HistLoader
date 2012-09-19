@@ -1,6 +1,7 @@
 #ifndef HIST_LOADER_H
 #define HIST_LOADER_H
 
+#include <istream>
 #include <map>
 #include <stdexcept>
 #include <set>
@@ -123,6 +124,7 @@ public:
 	};	
 
 	void LoadFile(std::string fileName);
+	void LoadFromStream(std::istream& in, const std::string& name = "<input>");
 	void CreateHistograms();
 
 	TH1* GetHistogram(std::string name);

@@ -14,25 +14,28 @@ static const std::string RANGE = "range";
 void HistLoader::LoadFile(std::string fileName)
 {
 	std::ifstream in(fileName.c_str());
-	std::string line;
+	LoadFromStream(in, fileName);
+}
 
-	parserFileName = fileName;
+void HistLoader::LoadFromStream(std::istream& in, const std::string& name)
+{
+	parserFileName = name;
 	parserLineNumber = 0;
 
+	std::string line;
 	while (parserLineNumber++, std::getline(in, line)) {
 		ParseLine(line);
 	}
 
 	ResolveTemplates();
-
 	for (HistDefMap::iterator it = defMap.begin(); it != defMap.end(); ++it) {
 		DebugDumpDef(&it->second);
-	}
+	}	
 }
 
 void HistLoader::CreateHistograms()
 {
-	
+
 }
 
 void HistLoader::ParseLine(std::string line)
@@ -120,8 +123,18 @@ void HistLoader::HandleDef(std::string line)
 
 	if (!CheckTemplate(line))
 		CheckRange(line);
+	else {
+		std::string lineCopy = line;
+		if (CheckRange(lineCopy))
+			throw ParserError("template and range in one definition is not supported", parserFileName, parserLineNumber);
+	}
 
 	CheckParents(line);
+
+	if (line.empty())
+		throw ParserError("histogram definition without a name", parserFileName, parserLineNumber);
+	if (line == "template")
+		throw ParserError("template without a name", parserFileName, parserLineNumber);
 
 	if (defMap.find(line) != defMap.end())
 		throw ParserError("'" + line + "' redefined", parserFileName, parserLineNumber);
@@ -138,6 +151,7 @@ HistLoader::HistDef::Value HistLoader::GetValue(std::string line)
 	std::vector<std::string> entries;
 	line = line.substr(1, line.size()-2);
 	boost::split(entries, line, ischar<';'>);
+	std::for_each(entries.begin(), entries.end(), boost::bind(boost::trim<std::string>, _1, std::locale()));
 	return entries;
 }
 
