@@ -19,7 +19,7 @@ LD = g++
 LDFLAGS += -Lbin `root-config --ldflags`
 LDFLAGS_DEBUG +=
 LDFLAGS_RELEASE += 
-LIBS +=  -lHistLoader `root-config --libs`
+LIBS +=  -lHistLoader `root-config --libs` -lboost_unit_test_framework
 
 BIN = bin
 SRC = src
