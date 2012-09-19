@@ -59,12 +59,16 @@ TARGETS = $(patsubst $(SRC)/%.cpp,$(BIN)/%,$(SRC_FILES))
 
 all: lib $(TARGETS)
 
+check: bin/unit_test
+	@bin/unit_test --build_info --log_level=test_suite
+
 lib: $(BIN)/libHistLoader.a
 
 help:
 	@echo Use 'make' to create all programs
 	@echo Use 'make lib' to create the libHistLoader.a
 	@echo Special targets:
+	@echo "  check          - Run all tests"
 	@echo "  list           - List all targets"
 	@echo "  mkinfo         - List makefile itnernals"
 	@echo "  help           - Show this help message"
