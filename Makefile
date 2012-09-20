@@ -19,7 +19,7 @@ LD = g++
 LDFLAGS += -Lbin `root-config --ldflags`
 LDFLAGS_DEBUG +=
 LDFLAGS_RELEASE += 
-LIBS +=  -lHistLoader `root-config --libs` -lboost_unit_test_framework
+LIBS += -lHistLoader `root-config --libs` -lboost_unit_test_framework
 
 BIN = bin
 SRC = src
@@ -36,8 +36,11 @@ LDFLAGS += $(LDFLAGS_$(MODE))
 ######
 ##  File lists
 
+LIB_HDR = $(wildcard $(INC)/*.h)
+
 SRC_FILES = $(wildcard $(SRC)/*.cpp)
 LIB_FILES = $(wildcard $(LIB)/*.cpp)
+#ALL_LIB_FILES = $(LIB_FILES) $(BUILD)/dict.cpp
 
 SRC_DEPS = $(patsubst $(SRC)/%.cpp,$(BUILD)/%.d,$(SRC_FILES))
 LIB_DEPS = $(patsubst $(LIB)/%.cpp,$(BUILD)/%.d,$(LIB_FILES))
@@ -45,7 +48,8 @@ LIB_DEPS = $(patsubst $(LIB)/%.cpp,$(BUILD)/%.d,$(LIB_FILES))
 ALL_DEPS = $(SRC_DEPS) $(LIB_DEPS)
 
 SRC_OBJS = $(patsubst $(SRC)/%.cpp,$(BUILD)/%.o,$(SRC_FILES))
-LIB_OBJS = $(patsubst $(LIB)/%.cpp,$(BUILD)/%.o,$(LIB_FILES))
+LIB_OBJS = $(BUILD)/dict.o
+LIB_OBJS += $(patsubst $(LIB)/%.cpp,$(BUILD)/%.o,$(LIB_FILES)) 
 
 ALL_OBJS = $(SRC_OBJS) $(LIB_OBJS)
 
@@ -81,18 +85,29 @@ $(BUILD)/%.d: $(LIB)/%.cpp
 	@$(CPP) $(CPPFLAGS) -MM -MT $(patsubst $(LIB)/%.cpp,$(BUILD)/%.o,$<) $< > $@
 
 # Object creation
+
+$(BUILD)/dict.o: $(BUILD)/dict.cpp 
+#	@echo Compiling ROOT dictionary
+#	@$(CPP) $(CPPFLAGS) -c $< -o $@
+
 $(BUILD)/%.o:
 	@echo Compiling $@
-	@$(CPP) $(CPPFLAGS) -c $< -o $@
+	$(CPP) $(CPPFLAGS) -c $< -o $@
+
+$(BUILD)/dict.cpp: $(LIB_SRC) $(LIB_HDR) etc/LinkDef.h Makefile
+	@echo Creating ROOT dictionary $(patsubst $(INC)/%.h,%.h,$(LIB_HDR))
+	rootcint -f $@ -c -I$(INC) $(patsubst $(INC)/%.h,%.h,$(LIB_HDR)) etc/LinkDef.h
+#	@sed -i 's/include\/HistLoader.h/HistLoader.h/g' build/dict.cpp
+#	@sed -i 's/include\/HistLoader.h/HistLoader.h/g' build/dict.h
 	
 # Target
-$(BIN)/%: $(BUILD)/%.o $(LIB_OBJS)
+$(BIN)/%: $(BUILD)/%.o $(BIN)/libHistLoader.a
 	@echo Linking $@
 	@$(LD) -o $@ $(LDFLAGS) $< -lHistLoader $(LIBS)
 
 $(BIN)/libHistLoader.a: $(LIB_OBJS)
 	@echo Creating $@
-	@$(AR) $(ARFLAGS) $@ $(LIB_OBJS)
+	$(AR) $(ARFLAGS) $@ $(LIB_OBJS)
 
 -include $(ALL_DEPS)
 

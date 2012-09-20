@@ -7,9 +7,6 @@
 #include <set>
 #include <string>
 
-#include <boost/lexical_cast.hpp>
-#include <boost/variant.hpp>
-
 #include <TH1.h>
 
 typedef std::map<std::string,TH1*> HistMap;
@@ -17,11 +14,11 @@ typedef std::map<std::string,TH1*> HistMap;
 class HistLoader
 {
 public:
+	ClassDef(HistLoader, 1);
+
 	struct ParserError : public std::runtime_error
 	{
-		ParserError(const std::string& msg, const std::string& fn, size_t ln)
-		: std::runtime_error(fn + ":" + boost::lexical_cast<std::string>(ln) + " - " + msg)
-		{ }
+		ParserError(const std::string& msg, const std::string& fn, size_t ln);
 
 		virtual ~ParserError() throw()
 		{ }
@@ -29,7 +26,40 @@ public:
 
 	struct HistDef
 	{
-		typedef boost::variant<std::string,std::vector<std::string>> Value;
+		struct Value 
+		{
+			std::string str;
+			std::vector<std::string> vec;
+			bool isStr;
+
+			Value()
+			: isStr(true)
+			{ }
+
+			Value(std::string s)
+			: str(s), isStr(true)
+			{ }
+
+			Value(std::vector<std::string> v)
+			: vec(v), isStr(false)
+			{ }
+
+			Value& operator = (const std::string& s)
+			{
+				str = s;
+				isStr = true;
+				return *this;
+			}
+
+			Value& operator = (const std::vector<std::string>& v)
+			{
+				vec = v;
+				isStr = false;
+				return *this;
+			}
+		};
+
+		//typedef boost::variant<std::string,std::vector<std::string>> Value;
 		typedef std::map<std::string,Value> ValueMap;
 
 		std::string name;
@@ -60,61 +90,19 @@ public:
 				return def;
 
 			std::string var;
-			boost::apply_visitor(ValueForIndex(var, idx), attributes[attr]);
+
+			Value& val = attributes[attr];
+			if (val.isStr)
+				var = val.str;
+			else if (idx == -1)
+				var = val.vec[0];
+			else
+				var = val.vec[idx];
+
 			if (noVar)
 				return var;
 			return ResolveAllVariables(var, idx);
 		}
-
-		struct OutputValue : public boost::static_visitor<>
-		{
-			OutputValue(std::ostream& o)
-			: out(o)
-			{ }
-
-			void operator()(const std::string& str) const
-			{
-				out << str;
-			}
-
-			void operator()(const std::vector<std::string>& vec) const
-			{
-				out << "[";
-				for (size_t i=0; i < vec.size(); ++i) {
-					if (i > 0)
-						out << ", ";
-					out << vec[i];
-				}
-				out << "]";
-			}
-
-		private:
-			std::ostream& out;
-		};
-
-		struct ValueForIndex : public boost::static_visitor<>
-		{
-			ValueForIndex(std::string& v, int i)
-			: var(v), idx(i)
-			{ }
-
-			void operator()(const std::string& str) const
-			{
-				var = str;
-			}
-
-			void operator()(const std::vector<std::string>& vec) const
-			{
-				if (idx == -1)
-					var = vec[0];
-				else
-					var = vec[idx];
-			}			
-
-		private:
-			std::string& var;
-			int idx;			
-		};
 
 	private:
 		std::set<std::string> currentlyResolving;
@@ -127,11 +115,11 @@ public:
 	void LoadFromStream(std::istream& in, const std::string& name = "<input>");
 	void CreateHistograms();
 
-	TH1* GetHistogram(std::string name);
-	template <typename T>
-	T* GetHistogram(std::string name);
+	//TH1* GetHistogram(std::string name);
+	//template <typename T>
+	//T* GetHistogram(std::string name);
 
-	HistMap& GetAllHistograms();
+	//HistMap& GetAllHistograms();
 
 	HistDef& GetDef(const std::string& name)
 	{
@@ -178,8 +166,18 @@ private:
 
 static inline std::ostream& operator<<(std::ostream& out, const HistLoader::HistDef::Value& val)
 {
-	boost::apply_visitor(HistLoader::HistDef::OutputValue(out), val);
-	return out;
+	if (val.isStr) {
+		return out << val.str;
+	}
+	else {
+		out << "[";
+		for (size_t i=0; i < val.vec.size(); ++i) {
+		if (i > 0)
+			out << ", ";
+			out << val.vec[i];
+		}
+		return out << "]";	
+	}
 }
 
 #endif //HIST_LOADER_H

@@ -4,12 +4,14 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "HistLoader.h"
 
 static const std::string TEMPLATE = "template";
 static const std::string RANGE = "range";
 
+ClassImp(HistLoader);
 
 void HistLoader::LoadFile(std::string fileName)
 {
@@ -226,6 +228,10 @@ void HistLoader::DebugDumpDef(HistDef* def)
 		std::cout << "   " << it->first << ": " << it->second << "\n";
 	}
 }
+
+HistLoader::ParserError::ParserError(const std::string& msg, const std::string& fn, size_t ln)
+: std::runtime_error(fn + ":" + boost::lexical_cast<std::string>(ln) + " - " + msg)
+{ }
 
 std::string HistLoader::HistDef::ResolveAllVariables(std::string val, int idx)
 {
