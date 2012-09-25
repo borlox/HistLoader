@@ -53,6 +53,9 @@ LIB_OBJS += $(patsubst $(LIB)/%.cpp,$(BUILD)/%.o,$(LIB_FILES))
 
 ALL_OBJS = $(SRC_OBJS) $(LIB_OBJS)
 
+SLIB = $(BIN)/libHistLoader.a
+DYNLIB = $(BIN)/libHistLoader.so
+
 TARGETS = $(patsubst $(SRC)/%.cpp,$(BIN)/%,$(SRC_FILES))
 
 #VERSIONMAJOR = `$(CPP) --version | grep gcc | awk '{print $3}' |awk -F.  '{ print $1 }' `
@@ -61,18 +64,18 @@ TARGETS = $(patsubst $(SRC)/%.cpp,$(BIN)/%,$(SRC_FILES))
 
 ##  Targets
 
-all: lib $(TARGETS)
+all: libs $(TARGETS)
 
 check: bin/unit_test
 	@bin/unit_test --build_info --log_level=test_suite
 
 install: lib
-	@cp $(BIN)/libHistLoader.so $$ROOTSYS/lib
+	@cp $(DYNLIB) $$ROOTSYS/lib
 
 uninstall:
-	@rm -f $$ROOTSYS/lib/libHistLoader.so
+	@rm -f $$ROOTSYS/lib/$(notdir $(DYNLIB))
 
-lib: $(BIN)/libHistLoader.so
+libs: $(DYNLIB) $(SLIB)
 
 help:
 	@echo Use 'make' to create all programs
@@ -98,28 +101,28 @@ $(BUILD)/%.o:
 	@echo Compiling $@
 	@$(CPP) $(CPPFLAGS) -c $< -o $@
 
-$(BUILD)/dict.cpp: $(LIB_SRC) $(LIB_HDR) etc/LinkDef.h Makefile
+$(BUILD)/dict.cpp: $(LIB_SRC) $(LIB_HDR) etc/LinkDef.h
 	@echo Creating ROOT dictionary
 	@rootcint -f $@ -c -I$(INC) $(patsubst $(INC)/%.h,%.h,$(LIB_HDR)) etc/LinkDef.h
 	
 # Target
-$(BIN)/%: $(BUILD)/%.o $(BIN)/libHistLoader.so
+$(BIN)/%: $(BUILD)/%.o $(SLIB)
 	@echo Linking $@
-	@$(LD) -o $@ $(LDFLAGS) $< -lHistLoader $(LIBS)
+	@$(LD) -o $@ $(LDFLAGS) $< $(SLIB) $(LIBS)
 
-$(BIN)/libHistLoader.a: $(LIB_OBJS)
+$(SLIB): $(LIB_OBJS)
 	@echo Creating $@
 	@rm -f $@
 	@$(AR) $(ARFLAGS) $@ $(LIB_OBJS)
 
-$(BIN)/libHistLoader.so: $(LIB_OBJS)
+$(DYNLIB): $(LIB_OBJS)
 	@echo Creating $@
 	@$(LD) -shared -o $@ $(LIB_OBJS)
 
 -include $(ALL_DEPS)
 
 clean:
-	@$(RM) $(ALL_OBJS) $(ALL_DEPS) $(TARGETS) $(BIN)/libHistLoader.a
+	@$(RM) $(ALL_OBJS) $(ALL_DEPS) $(TARGETS) $(BIN)/libHistLoader.a $(BIN)/libHistLoader.so
 
 list:
 	@echo Target List
