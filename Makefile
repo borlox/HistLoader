@@ -11,7 +11,7 @@ AR = ar
 ARFLAGS = rcs
 
 CPP = g++
-CPPFLAGS +=  -Iinclude -O3 -std=c++0x `root-config --cflags` #-Wall -Wextra -pedantic
+CPPFLAGS +=  -Iinclude -O3 -std=c++0x -fPIC `root-config --cflags` #-Wall -Wextra -pedantic
 CPPFLAGS_DEBUG += -g -O0 -s
 CPPFLAGS_RELEASE +=  -DNDEBUG
 
@@ -66,7 +66,13 @@ all: lib $(TARGETS)
 check: bin/unit_test
 	@bin/unit_test --build_info --log_level=test_suite
 
-lib: $(BIN)/libHistLoader.a
+install: lib
+	@cp $(BIN)/libHistLoader.so $$ROOTSYS/lib
+
+uninstall:
+	@rm -f $$ROOTSYS/lib/libHistLoader.so
+
+lib: $(BIN)/libHistLoader.so
 
 help:
 	@echo Use 'make' to create all programs
@@ -87,27 +93,28 @@ $(BUILD)/%.d: $(LIB)/%.cpp
 # Object creation
 
 $(BUILD)/dict.o: $(BUILD)/dict.cpp 
-#	@echo Compiling ROOT dictionary
-#	@$(CPP) $(CPPFLAGS) -c $< -o $@
 
 $(BUILD)/%.o:
 	@echo Compiling $@
-	$(CPP) $(CPPFLAGS) -c $< -o $@
+	@$(CPP) $(CPPFLAGS) -c $< -o $@
 
 $(BUILD)/dict.cpp: $(LIB_SRC) $(LIB_HDR) etc/LinkDef.h Makefile
-	@echo Creating ROOT dictionary $(patsubst $(INC)/%.h,%.h,$(LIB_HDR))
-	rootcint -f $@ -c -I$(INC) $(patsubst $(INC)/%.h,%.h,$(LIB_HDR)) etc/LinkDef.h
-#	@sed -i 's/include\/HistLoader.h/HistLoader.h/g' build/dict.cpp
-#	@sed -i 's/include\/HistLoader.h/HistLoader.h/g' build/dict.h
+	@echo Creating ROOT dictionary
+	@rootcint -f $@ -c -I$(INC) $(patsubst $(INC)/%.h,%.h,$(LIB_HDR)) etc/LinkDef.h
 	
 # Target
-$(BIN)/%: $(BUILD)/%.o $(BIN)/libHistLoader.a
+$(BIN)/%: $(BUILD)/%.o $(BIN)/libHistLoader.so
 	@echo Linking $@
 	@$(LD) -o $@ $(LDFLAGS) $< -lHistLoader $(LIBS)
 
 $(BIN)/libHistLoader.a: $(LIB_OBJS)
 	@echo Creating $@
-	$(AR) $(ARFLAGS) $@ $(LIB_OBJS)
+	@rm -f $@
+	@$(AR) $(ARFLAGS) $@ $(LIB_OBJS)
+
+$(BIN)/libHistLoader.so: $(LIB_OBJS)
+	@echo Creating $@
+	@$(LD) -shared -o $@ $(LIB_OBJS)
 
 -include $(ALL_DEPS)
 
